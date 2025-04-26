@@ -1,19 +1,26 @@
-import type { NextRequest } from "next/server"
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-import { auth0 } from "./lib/auth0"
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const adminToken = request.cookies.get('admin_token')?.value;
 
-export async function middleware(request: NextRequest) {
-  return await auth0.middleware(request)
+  // Proteksi semua route dibawah /resepsionis
+  if (pathname.startsWith('/resepsionis')) {
+    if (!adminToken) {
+      return NextResponse.redirect(new URL('/admin/login', request.url));
+    }
+    
+    // Tambahkan pengecekan role jika diperlukan
+    // const role = getRoleFromToken(adminToken);
+    // if (role !== 'resepsionis') {
+    //   return NextResponse.redirect(new URL('/unauthorized', request.url));
+    // }
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico, sitemap.xml, robots.txt (metadata files)
-     */
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)",
-  ],
-}
+  matcher: ['/resepsionis/:path*'],
+};

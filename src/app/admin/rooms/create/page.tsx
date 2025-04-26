@@ -36,7 +36,7 @@ export default function CreateRoomPage() {
         throw new Error(errorData.message || `HTTP ${res.status}`);
       }
       setSnackbar({ open: true, message: 'Kamar berhasil ditambahkan.', severity: 'success' });
-      setTimeout(() => router.push('/admin/rooms'), 1000);
+      setTimeout(() => router.push('/admin'), 1000);
     } catch (err: any) {
       setSnackbar({ open: true, message: err.message || 'Terjadi kesalahan.', severity: 'error' });
     } finally {
@@ -46,7 +46,7 @@ export default function CreateRoomPage() {
 
   return (
     <Container sx={{ my: 4, maxWidth: 'sm' }}>
-      <Typography variant="h5" gutterBottom>
+      <Typography sx={{color:"#000000"}}variant="h5" gutterBottom>
         Tambah Kamar Baru
       </Typography>
       <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -69,11 +69,6 @@ export default function CreateRoomPage() {
           value={price}
           onChange={e => setPrice(e.target.value)}
           required
-        />
-        <TextField
-          label="URL Gambar"
-          value={image}
-          onChange={e => setImage(e.target.value)}
         />
         <Box sx={{ position: 'relative', display: 'inline-flex' }}>
           <Button type="submit" variant="contained" disabled={loading}>

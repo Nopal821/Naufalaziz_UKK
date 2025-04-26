@@ -1,0 +1,61 @@
+/* resources/css/auth.css */
+
+/* Style untuk form login */
+.auth-container {
+    max-width: 500px; /* Mengatur lebar maksimum form */
+    margin: 0 auto; /* Menjaga form tetap terpusat */
+}
+
+/* Input dan tombol form */
+.auth-input {
+    font-size: 1rem;
+    padding: 0.75rem;
+    border-radius: 0.375rem; /* Membuat input lebih bulat */
+    border: 1px solid #d1d5db; /* Border berwarna abu-abu */
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.auth-input:focus {
+    border-color: #4c51bf; /* Warna border saat fokus */
+    box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.5); /* Efek fokus */
+}
+
+.auth-input::placeholder {
+    color: #6b7280; /* Warna placeholder */
+}
+
+/* Tombol primary */
+.primary-button {
+    background-color: #4c51bf; /* Warna tombol */
+    color: white;
+    padding: 1rem;
+    border-radius: 0.375rem;
+    width: 100%;
+    font-size: 1.125rem;
+    transition: background-color 0.2s;
+}
+
+.primary-button:hover {
+    background-color: #434190; /* Efek hover pada tombol */
+}
+
+/* Style untuk link sign-up */
+.auth-container p {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.auth-container p a {
+    color: #4c51bf;
+}
+
+.auth-container p a:hover {
+    color: #3b4cca;
+}
+
+/* Responsif untuk form login */
+@media (max-width: 1024px) {
+    .auth-container {
+        padding: 2rem; /* Menambahkan padding pada form di layar kecil */
+    }
+}

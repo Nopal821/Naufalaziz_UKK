@@ -478,9 +478,9 @@ const handleLogout = () => {
                   }}
                 >
                   <CardMedia
-                    component="img"
+                 
                     height="200"
-                    image={room.imageUrl || "/default-room.jpg"}
+               
                     alt={room.name}
                   />
                   <CardContent>

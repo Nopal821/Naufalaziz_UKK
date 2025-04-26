@@ -1,24 +1,28 @@
+// src/app/resepsionis/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import Navbar from "@/components/Navbar";
 import {
-  Card,
-  CardContent,
-  Typography,
-  CircularProgress,
   Container,
   Box,
-  IconButton,
+  Typography,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  TextField,
+  Button,
   Snackbar,
   Alert,
-  Button,
 } from "@mui/material";
-import { Brightness4, Brightness7 } from "@mui/icons-material";
-import Link from "next/link";
+import { withAuthResepsionis } from "../../lib/withAuthResepsionis";
+import { useRouter } from "next/navigation";
 
-interface reservasi {
+interface Reservasi {
   id: number;
   check_in: string;
   check_out: string;
@@ -27,150 +31,184 @@ interface reservasi {
   catatan: string | null;
 }
 
-export default function MyReservationsPage() {
-  const { data: session, status } = useSession();
-  const [reservations, setReservations] = useState<reservasi[]>([]);
+function MyReservationsPage() {
+  const [reservations, setReservations] = useState<Reservasi[]>([]);
   const [loading, setLoading] = useState(true);
-  const [open, setOpen] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "error" | "success" | "info" | "warning"; }>({
-    open: false,
-    message: "",
-    severity: "info",
-  });
-  const [darkMode, setDarkMode] = useState(true);
-  const [showAppBar, setShowAppBar] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  const handleClose = () => setOpen(false);
-
-  const showSnackbar = (message: string, severity: typeof snackbar.severity) => {
+  const [searchDate, setSearchDate] = useState("");
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "error" | "success" | "info" | "warning";
+  }>({ open: false, message: "", severity: "info" });
+   const router = useRouter();
+    const handleLogout = () => {
+      localStorage.removeItem("admin_token");
+      router.push("/resepsionis/login");
+    };
+  
+    useEffect(() => {
+      if (!localStorage.getItem("admin_token")) router.push("/resepsionis/login");
+    }, [router]);
+  const showSnackbar = (message: string, severity: typeof snackbar.severity) =>
     setSnackbar({ open: true, message, severity });
-  };
-
 
   const handleAccepted = async (id: number) => {
     try {
-      const response = await fetch(
+      const res = await fetch(
         `http://localhost:8000/api/menerima/order/${id}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            status: "confirmed",
-          }),
-        });
-      const data = await response.json();
-      if (response.ok) {
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "confirmed" }),
+        }
+      );
+      const data = await res.json();
+      if (res.ok) {
         setReservations((prev) =>
           prev.map((r) => (r.id === id ? { ...r, status: data.status } : r))
         );
         showSnackbar("Berhasil menerima reservasi", "success");
       } else {
-        console.error(data);
-        showSnackbar(`Gagal: ${data.message || JSON.stringify(data)}`, "error");
+        showSnackbar(data.message || "Gagal menerima.", "error");
       }
-    } catch (err) {
-      console.error(err);
+    } catch {
       showSnackbar("Error saat menerima reservasi.", "error");
     }
   };
-  
-
-
 
   useEffect(() => {
-    setDarkMode(window.matchMedia("(prefers-color-scheme: dark)").matches);
-  }, []);
-  
-  useEffect(() => {
-    if (status !== 'authenticated' || !session?.user?.id) {
-      setLoading(false);
-      return;
-    }
-  
-    fetch(`http://localhost:8000/api/pemesanan`, {
-    })
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(json => {
-        setReservations(Array.isArray(json.data) ? json.data : []);
-      })
-      .catch(err => {
-        console.error(err);
-        setSnackbar({ open: true, message: 'Gagal memuat reservasi.', severity: 'error' });
-      })
+    setLoading(true);
+    fetch("http://localhost:8000/api/pemesanan")
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((json) => setReservations(json.data || []))
+      .catch(() => showSnackbar("Gagal memuat reservasi.", "error"))
       .finally(() => setLoading(false));
-  }, [session, status]);
-  
+  }, []);
 
- 
-  if (status === "loading") {
-    return (
-      <>
-        <Box display="flex" justifyContent="center" mt={10}>
-          <CircularProgress />
-        </Box>
-      </>
-    );
-  }
-  if (status !== "authenticated") {
-    return (
-      <>
-    
-        <Container sx={{ mt: 10, textAlign: "center" }}>
-          <Typography variant="h6">Silakan login untuk melihat reservasi Anda.</Typography>
-        </Container>
-      </>
-    );
-  }
+  const filtered = reservations.filter((r) =>
+    searchDate
+      ? new Date(r.check_in).toISOString().slice(0, 10) === searchDate
+      : true
+  );
 
   return (
-    <>
-      <Container maxWidth="md" sx={{ mt: 12, mb: 4 }}>
-        <Typography variant="h5" gutterBottom>
-          Reservasi
-        </Typography>
+    <Container
+      maxWidth="lg"
+      sx={{
+        mt: 12,
+        mb: 4,
+        backgroundColor: "#fff",
+        boxShadow: 3,
+        borderRadius: 2,
+        p: 4,
+        minHeight: "100vh",
+      }}
+    >
+      <Box
+       display="flex"
+       justifyContent="space-between"
+       alignItems="center"
+       sx={{
+         mb: 4,
+         p: 2,
+         borderBottom: "1px solid #ddd",
+         backgroundColor: "#f9f9f9",
+         borderRadius: 2,
+       }}
+     >
+       <Typography variant="h5" fontWeight="bold" color="primary">
+         Resepsionis Dashboard
+       </Typography>
+       <Button
+         variant="text"
+         size="small"
+         onClick={handleLogout}
+         sx={{
+           color: "#d32f2f",
+           fontWeight: "bold",
+           textTransform: "none",
+           "&:hover": {
+             backgroundColor: "transparent",
+             color: "#b71c1c",
+           },
+         }}
+       >
+         Logout
+       </Button>
+     </Box>
+      <Typography variant="h5" gutterBottom fontWeight="bold" sx={{color:'#000000'}}>
+        Daftar Reservasi
+      </Typography>
 
-        {loading ? (
-          <Box display="flex" justifyContent="center" mt={4}>
-            <CircularProgress />
-          </Box>
-        ) : reservations.length === 0 ? (
-          <Typography>Tidak ada reservasi ditemukan.</Typography>
-        ) : (
-          reservations.map((resv) => (
-            <Card key={resv.id} sx={{ mb: 3 }}>
-              <CardContent>
-                {resv ? (
-                  <>
-                   
-                    <Typography>
-                      Check‑in: {new Date(resv.check_in).toLocaleDateString()}
-                    </Typography>
-                    <Typography>
-                      Check‑out: {new Date(resv.check_out).toLocaleDateString()}
-                    </Typography>
-                    <Typography>Jumlah Tamu: {resv.jumlah_tamu}</Typography>
-                    {resv.catatan && <Typography>Catatan: {resv.catatan}</Typography>}
-                    <Typography sx={{color: "#bf0808",}}>Status: {resv.status}</Typography>
-                  </>
-                ) : (
-                  <Typography color="error">Data kamar tidak tersedia.</Typography>
-                )}
-           <Button onClick={() => handleAccepted(resv.id)}>
-    Receive
-  </Button>
+      <Box mb={3}>
+        <TextField
+          label="Cari Berdasarkan Tanggal Check-in"
+          type="date"
+          fullWidth
+          value={searchDate}
+          onChange={(e) => setSearchDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
+      </Box>
 
-
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </Container>
+      {loading ? (
+        <Box display="flex" justifyContent="center" mt={4}>
+          <CircularProgress />
+        </Box>
+      ) : filtered.length === 0 ? (
+        <Typography textAlign="center">Tidak ada reservasi ditemukan.</Typography>
+      ) : (
+        <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Check-in</TableCell>
+                <TableCell>Check-out</TableCell>
+                <TableCell>Jumlah Tamu</TableCell>
+                <TableCell>Catatan</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Aksi</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {filtered.map((resv) => (
+                <TableRow key={resv.id}>
+                  <TableCell>{resv.id}</TableCell>
+                  <TableCell>
+                    {new Date(resv.check_in).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(resv.check_out).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>{resv.jumlah_tamu}</TableCell>
+                  <TableCell>{resv.catatan || "-"}</TableCell>
+                  <TableCell
+                    sx={{
+                      color:
+                        resv.status === "confirmed"
+                          ? "success.main"
+                          : "error.main",
+                    }}
+                  >
+                    {resv.status}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={() => handleAccepted(resv.id)}
+                      disabled={resv.status === "confirmed"}
+                    >
+                      Receive
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
 
       <Snackbar
         open={snackbar.open}
@@ -181,13 +219,13 @@ export default function MyReservationsPage() {
         <Alert
           onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
           severity={snackbar.severity}
-          sx={{ width: "100%" }}
         >
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </>
+    </Container>
   );
 }
 
-
+// ─── wrap it with your auth‐check HOC ──────────────────────────────────────
+export default withAuthResepsionis(MyReservationsPage);
